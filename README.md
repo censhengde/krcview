@@ -1,7 +1,7 @@
 # KRC 格式歌词UI控件
 ## 一，成品展示
 krcview 目前仿酷狗音乐app实现了歌词蠕动、滑动定位等功能，效果如下所示：
-![image](https://code.byted.org/censhengde/krcview.git/res/krcview.gif)
+![image](https://code.byted.org/ies/krcview/tree/master/res/krcview.gif)
 ## 二，使用方式
 ### 1.在工程根目录 build.gradle 文件添加代码：
 ```agsl
