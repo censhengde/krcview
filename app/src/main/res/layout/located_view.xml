@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="10dp">
+
+    <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_pro"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            tools:text="00:00"
+            android:textColor="@color/design_default_color_secondary_variant"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintHorizontal_chainStyle="spread"
+            app:layout_constraintEnd_toStartOf="@id/line"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    <View
+            android:id="@+id/line"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            app:layout_constraintStart_toEndOf="@id/tv_pro"
+            app:layout_constraintTop_toTopOf="@id/tv_pro"
+            app:layout_constraintEnd_toStartOf="@id/btn_seek_to"
+            android:layout_marginHorizontal="10dp"
+            app:layout_constraintBottom_toBottomOf="@id/tv_pro"
+            android:background="@color/design_default_color_secondary" />
+
+
+    <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/btn_seek_to"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/line"
+            app:layout_constraintTop_toTopOf="@id/tv_pro"
+            app:layout_constraintBottom_toBottomOf="@id/tv_pro"
+            android:scaleType="centerInside"
+            android:background="@null"
+            android:src="@drawable/ic_sami_paused"
+            />
+</androidx.constraintlayout.widget.ConstraintLayout>
