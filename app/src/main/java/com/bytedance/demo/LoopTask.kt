@@ -56,10 +56,12 @@ class LoopTask(
                     workThread?.start()
                     waitSafely()
                 }
+
                 THREAD_STATE_PAUSED -> {
                     threadState = THREAD_STATE_WORKING
                     notifySafely()
                 }
+
                 else -> {
                     return
                 }
@@ -78,6 +80,7 @@ class LoopTask(
             workThread = null
         } else {
             mainHandler.removeCallbacks(this)
+            mainHandler.removeCallbacksAndMessages(null)
         }
     }
 

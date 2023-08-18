@@ -31,10 +31,12 @@ class MainActivity : AppCompatActivity(), KrcView.onDraggingListener {
         super.onCreate(savedInstanceState)
         vb = ActivityMainBinding.inflate(layoutInflater)
         setContentView(vb.root)
+        // 解析krc 歌词文件并得到 krc歌词数据。
         val krcData = KrcParser.readFromAsset(this, "花海.krc")
+        // 设置krc歌词数据
         vb.krcView.setKrcData(krcData)
         progress = krcData[0].startTimeMs - 100
-        vb.seekBar.max = krcData!!.get(krcData.size - 1).endTimeMs().toInt() + 10000
+        vb.seekBar.max = krcData!!.get(krcData.size - 1).endTimeMs().toInt()
         vb.seekBar.setOnSeekBarChangeListener(object : OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
 
@@ -60,7 +62,7 @@ class MainActivity : AppCompatActivity(), KrcView.onDraggingListener {
             // 设置 located view
             vb.krcView.locatedView = this.root
         }
-        // 设置拖拽监听器
+        // 设置拖拽歌词监听器
         vb.krcView.setOnDraggingListener(this)
     }
 
@@ -104,5 +106,10 @@ class MainActivity : AppCompatActivity(), KrcView.onDraggingListener {
                 btn.text = "播放"
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        updateProgressTask.quit()
     }
 }
