@@ -57,4 +57,5 @@ java/kotlin代码部分：
 更多api用法详见app module。
 ## 四，问题反馈渠道
 加QQ群：
+
 ![image](https://github.com/censhengde/rv-multi-itemtype/blob/master/image/MultiAdapter%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88%E7%BE%A4%E7%BE%A4%E8%81%8A%E4%BA%8C%E7%BB%B4%E7%A0%81.png)
