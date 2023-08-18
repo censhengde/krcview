@@ -85,7 +85,6 @@ public class KrcView extends FrameLayout {
     private onDraggingListener onDraggingListener;
 
 
-
     // locatedView 延迟消失的时间，单位：毫秒。
     private long hideLocatedViewDelayTimeMs = 3000;
 
@@ -225,6 +224,7 @@ public class KrcView extends FrameLayout {
         }
     }
 
+    // 设置当前歌词进度。
     public final void setProgress(final long progress) {
         if (krcData == null || krcData.isEmpty()) {
             return;
@@ -282,18 +282,19 @@ public class KrcView extends FrameLayout {
     public void setHideLocatedViewDelayTimeMs(long timeMs) {
         this.hideLocatedViewDelayTimeMs = timeMs;
     }
+
     @Nullable
     public View getLocatedView() {
         return locatedView;
     }
 
+    // 设置拖拽歌词监听器。
     public void setOnDraggingListener(@NonNull onDraggingListener listener) {
         this.onDraggingListener = listener;
     }
 
 
-
-
+    // 设置 LocatedView。note:LocatedView 的垂直中心点与当前行歌词bottom 对齐。
     public void setLocatedView(View view) {
         if (view == null) {
             return;
@@ -325,7 +326,10 @@ public class KrcView extends FrameLayout {
             return;
         }
         krcData = data;
-        // 将 KrcLineInfo 数据集组织成一条链。方便 setProgress方法能快速
+        /**
+         * 将 KrcLineInfo 数据集组织成一条链。方便当前 progress 通过二分法能快速定位到当前行歌词。
+         * @see #setProgress(long)
+         */
         for (int i = 0; i < data.size(); i++) {
             final int next = i + 1;
             if (next < data.size()) {
@@ -414,7 +418,7 @@ public class KrcView extends FrameLayout {
         }
 
         public KrcLineView(Context context, AttributeSet attrs) {
-            this(context, attrs,0);
+            this(context, attrs, 0);
         }
 
         public KrcLineView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
@@ -435,7 +439,7 @@ public class KrcView extends FrameLayout {
         }
 
 
-         void setKrcLineInfo(KrcLineInfo info) {
+        void setKrcLineInfo(KrcLineInfo info) {
             if (info == null || TextUtils.isEmpty(info.text)) {
                 return;
             }
@@ -456,7 +460,7 @@ public class KrcView extends FrameLayout {
             KrcLineView.this.requestLayout();
         }
 
-         void setLineProgress(final long lineProgress) {
+        void setLineProgress(final long lineProgress) {
             if (krcLineInfo == null || krcLineInfo.words == null || krcLineInfo.words.isEmpty() || !isCurrentLine) {
                 return;
             }
@@ -631,6 +635,7 @@ public class KrcView extends FrameLayout {
 
         /**
          * 计算当前行高亮文字的宽度
+         *
          * @param lineProgress 相对当前行歌词开始时间的进度。
          * @return 当前行高亮文字的宽度
          */
@@ -723,6 +728,7 @@ public class KrcView extends FrameLayout {
             Log.i(TAG, "===>updateLocateViewTopOffset: " + locateViewTopOffset);
             requestLayout();
         }
+
         private void tryToHideLocatedViewDelay() {
             if (locatedView == null || locatedView.getVisibility() != VISIBLE) {
                 return;

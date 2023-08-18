@@ -16,12 +16,12 @@
             app:current_line_text_color="@color/white"
             app:current_line_highLight_text_color="@color/design_default_color_secondary_variant"
             app:normal_text_color="@color/white"
+            app:lineSpace="10dp"
             app:max_text_size="18sp"
             app:min_text_size="15sp"
             app:maxWordsPerLine="15"
             app:current_line_top_offset="70dp"
-            android:layout_marginBottom="10dp"
-            app:lineSpace="10dp" />
+            android:layout_marginBottom="10dp" />
 
     <SeekBar
             android:id="@+id/seekBar"
