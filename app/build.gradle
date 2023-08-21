@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'com.bytedance.lyricsview'
+    namespace 'com.bytedance.krcview.demo'
     compileSdk 32
 
     defaultConfig {
