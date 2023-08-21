@@ -9,9 +9,9 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
 import com.bytedance.krcview.KrcLineInfo
 import com.bytedance.krcview.KrcView
-import com.bytedance.lyricsview.R
-import com.bytedance.lyricsview.databinding.ActivityMainBinding
-import com.bytedance.lyricsview.databinding.LocatedViewBinding
+import com.bytedance.krcview.demo.R
+import com.bytedance.krcview.demo.databinding.ActivityMainBinding
+import com.bytedance.krcview.demo.databinding.LocatedViewBinding
 
 class MainActivity : AppCompatActivity(), KrcView.onDraggingListener {
     companion object {
