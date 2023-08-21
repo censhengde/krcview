@@ -28,6 +28,7 @@ import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import androidx.annotation.ColorInt;
+import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -82,6 +83,9 @@ public class KrcView extends FrameLayout {
 
     private final TextPaint textPaint = new TextPaint();
     private final Paint maxTextPaint = new Paint();
+    private int textScaleAnimDuration = 200;
+
+
 
     private onDraggingListener onDraggingListener;
 
@@ -94,7 +98,6 @@ public class KrcView extends FrameLayout {
     private View locatedView;
     private int locateViewTopOffset = 0;
 
-    private Typeface textTypeface;
 
     private final Runnable hideLocatedViewTask = () -> {
         if (locatedView == null || locatedView.getVisibility() != View.VISIBLE) {
@@ -233,6 +236,10 @@ public class KrcView extends FrameLayout {
         if (locatedView != null && locateViewTopOffset > 0) {
             locatedView.offsetTopAndBottom(locateViewTopOffset);
         }
+    }
+    public void setTextScaleAnimDuration(@IntRange(from = 0, to = Integer.MAX_VALUE) int duration) {
+        assert duration >= 0;
+        this.textScaleAnimDuration = duration;
     }
 
     // 设置当前歌词进度。
@@ -456,7 +463,7 @@ public class KrcView extends FrameLayout {
             super(context, attrs, defStyleAttr);
             initView();
             curLineTextScaleAnima.addUpdateListener(this);
-            curLineTextScaleAnima.setDuration(200);
+            curLineTextScaleAnima.setDuration(textScaleAnimDuration);
             curLineTextScaleAnima.setInterpolator(new LinearInterpolator());
             lineTextPaint.set(textPaint);
         }
