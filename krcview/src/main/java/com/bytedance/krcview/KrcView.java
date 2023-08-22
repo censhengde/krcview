@@ -86,7 +86,6 @@ public class KrcView extends FrameLayout {
     private int textScaleAnimDuration = 200;
 
 
-
     private onDraggingListener onDraggingListener;
 
 
@@ -220,10 +219,6 @@ public class KrcView extends FrameLayout {
         textPaint.setAntiAlias(true);
     }
 
-    private float dp2px(final float dp) {
-        final float scale = getResources().getDisplayMetrics().density;
-        return (dp * scale + 0.5f);
-    }
 
     private float sp2px(final float sp) {
         final float fontScale = getResources().getDisplayMetrics().scaledDensity;
@@ -237,6 +232,7 @@ public class KrcView extends FrameLayout {
             locatedView.offsetTopAndBottom(locateViewTopOffset);
         }
     }
+
     public void setTextScaleAnimDuration(@IntRange(from = 0, to = Integer.MAX_VALUE) int duration) {
         assert duration >= 0;
         this.textScaleAnimDuration = duration;
@@ -380,9 +376,12 @@ public class KrcView extends FrameLayout {
         return textPaint;
     }
 
-    @NonNull
-    public Paint getMaxTextPaint() {
-        return maxTextPaint;
+    public void setMinTextSize(float size) {
+        textPaint.setTextSize(size);
+    }
+
+    public void setMaxTextSize(float size) {
+        maxTextPaint.setTextSize(size);
     }
 
 
