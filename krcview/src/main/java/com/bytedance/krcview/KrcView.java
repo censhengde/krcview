@@ -16,6 +16,7 @@ import android.graphics.Shader.TileMode;
 import android.graphics.Typeface;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
+import android.service.quickaccesswallet.GetWalletCardsError;
 import android.text.Layout;
 import android.text.StaticLayout;
 import android.text.TextPaint;
@@ -106,6 +107,11 @@ public class KrcView extends FrameLayout {
         locatedView.setVisibility(View.INVISIBLE);
     };
 
+    private static void logI(String msg) {
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, msg);
+        }
+    }
 
     private final LinearSmoothScroller topSmoothScroller;
 
@@ -141,6 +147,8 @@ public class KrcView extends FrameLayout {
 
     private void init(AttributeSet attrs) {
         recyclerView.setHasFixedSize(true);
+        recyclerView.setItemAnimator(null);
+        recyclerView.setItemViewCacheSize(5);
         recyclerView.addOnScrollListener(onScrollListener);
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), RecyclerView.VERTICAL, false) {
             @Override
@@ -169,6 +177,10 @@ public class KrcView extends FrameLayout {
                 }
             }
 
+            @Override
+            protected int getExtraLayoutSpace(State state) {
+                return getMeasuredHeight() >> 1;
+            }
         });
 
         final TypedArray a = getContext().obtainStyledAttributes(attrs, R.styleable.KrcView);
@@ -224,6 +236,7 @@ public class KrcView extends FrameLayout {
         final float fontScale = getResources().getDisplayMetrics().scaledDensity;
         return (sp * fontScale + 0.5f);
     }
+
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
@@ -292,7 +305,8 @@ public class KrcView extends FrameLayout {
             scrollToPositionWithOffset(Math.max(0, curLineIndex));
         }
         if (curLineIndex != -1) {
-            recyclerView.getAdapter().notifyItemChanged(curLineIndex, progress - krcData.get(curLineIndex).startTimeMs);
+            final long lineProgress = progress - krcData.get(curLineIndex).startTimeMs;
+            recyclerView.getAdapter().notifyItemChanged(curLineIndex, lineProgress);
         }
     }
 
@@ -509,7 +523,8 @@ public class KrcView extends FrameLayout {
                 return;
             }
             this.lineProgress = lineProgress;
-            KrcLineView.this.invalidate();
+//            KrcLineView.this.invalidate();
+            invalidate();
         }
 
 
@@ -554,7 +569,7 @@ public class KrcView extends FrameLayout {
                 case MeasureSpec.UNSPECIFIED:
                     contentWidth =
                             maxTextPaint.measureText(krcLineInfo.text) + getPaddingStart() + getPaddingEnd();
-                    Log.i(TAG, "===> onMeasure:width MeasureSpec.AT_MOST,contentWidth: " + contentWidth);
+                    logI("===> onMeasure:width MeasureSpec.AT_MOST,contentWidth: " + contentWidth);
                     break;
                 case MeasureSpec.EXACTLY:
                 default:
@@ -590,7 +605,7 @@ public class KrcView extends FrameLayout {
                     contentHeight = MeasureSpec.getSize(heightMeasureSpec);
                     break;
             }
-            Log.i(TAG, "===> onMeasure position:" + bindPosition + " object:" + KrcLineView.this.hashCode());
+            logI("===> onMeasure position:" + bindPosition + " object:" + KrcLineView.this.hashCode());
             lineTextPaint.setTextSize(textPaint.getTextSize());
             setMeasuredDimension((int) contentWidth, (int) contentHeight);
         }
@@ -729,13 +744,13 @@ public class KrcView extends FrameLayout {
             switch (newState) {
                 case RecyclerView.SCROLL_STATE_DRAGGING:
                     isUserDragging = true;
-                    Log.i(TAG, "===> onScrollStateChanged: SCROLL_STATE_DRAGGING");
+                    logI("===> onScrollStateChanged: SCROLL_STATE_DRAGGING");
                     tryToShowLocatedView();
                     notifyStartDragging();
                     break;
 
                 case RecyclerView.SCROLL_STATE_IDLE:
-                    Log.i(TAG, "===> onScrollStateChanged: SCROLL_STATE_IDLE");
+                    logI("===> onScrollStateChanged: SCROLL_STATE_IDLE");
                     if (isUserDragging) {
                         isUserDragging = false;
                         tryToHideLocatedViewDelay();
@@ -773,7 +788,7 @@ public class KrcView extends FrameLayout {
             final int newLocateViewTopOffset = curVH.itemView.getBottom() - (locatedView.getHeight() >> 1);
             if (newLocateViewTopOffset != locateViewTopOffset) {
                 locateViewTopOffset = newLocateViewTopOffset;
-                Log.i(TAG, "===>updateLocateViewTopOffset: " + locateViewTopOffset);
+                logI("===>updateLocateViewTopOffset: " + locateViewTopOffset);
                 requestLayout();
             }
         }
@@ -818,9 +833,9 @@ public class KrcView extends FrameLayout {
         @Override
         public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
-            Log.i(TAG, "===>onScrolled: ");
+            logI("===>onScrolled: ");
             if (isUserDragging) {
-                Log.i(TAG, "===>onScrolled: isUserDragging");
+                logI("===>onScrolled: isUserDragging");
                 notifyDragging();
             }
         }
