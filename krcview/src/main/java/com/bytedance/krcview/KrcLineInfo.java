@@ -57,6 +57,10 @@ public class KrcLineInfo implements Comparable<Long> {
             }
             return -1;
         }
+
+        public long endTimeMs() {
+            return startTimeMs + duration;
+        }
     }
 
 }
