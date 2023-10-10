@@ -8,6 +8,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
@@ -141,7 +142,6 @@ public class KrcView extends FrameLayout {
     private void init(AttributeSet attrs) {
         recyclerView.setHasFixedSize(true);
         recyclerView.addOnScrollListener(onScrollListener);
-
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), RecyclerView.VERTICAL, false) {
             @Override
             public void measureChildWithMargins(@NonNull View child, int widthUsed, int heightUsed) {
@@ -150,7 +150,7 @@ public class KrcView extends FrameLayout {
                     return;
                 }
                 final RecyclerView.LayoutParams lp = (RecyclerView.LayoutParams) child.getLayoutParams();
-                final int adapterPosition = lp.getViewAdapterPosition();
+                final int adapterPosition = lp.getBindingAdapterPosition();
                 if (adapterPosition < 0) {
                     return;
                 }
@@ -178,9 +178,9 @@ public class KrcView extends FrameLayout {
         assert currentLineTopOffset >= 0;
         maxWordsPerLine = a.getInt(R.styleable.KrcView_maxWordsPerLine, 10);
         assert (maxWordsPerLine > 0);
-        normalTextColor = readAttrColor(a, R.styleable.KrcView_normal_text_color);
-        currentLineTextColor = readAttrColor(a, R.styleable.KrcView_current_line_text_color);
-        currentLineHLTextColor = readAttrColor(a, R.styleable.KrcView_current_line_highLight_text_color);
+        normalTextColor = readAttrColor(a, R.styleable.KrcView_normal_text_color, Color.WHITE);
+        currentLineTextColor = readAttrColor(a, R.styleable.KrcView_current_line_text_color, normalTextColor);
+        currentLineHLTextColor = readAttrColor(a, R.styleable.KrcView_current_line_highLight_text_color, Color.GREEN);
         a.recycle();
         if (lineSpace > 0f) {
             recyclerView.addItemDecoration(new ItemDecoration() {
@@ -198,7 +198,7 @@ public class KrcView extends FrameLayout {
     }
 
     @ColorInt
-    private int readAttrColor(TypedArray a, int index) {
+    private int readAttrColor(TypedArray a, int index, @ColorInt int defValue) {
         int color = a.getColor(index, 0);
         if (color == 0) {
             final int colorRes = a.getResourceId(index, 0);
@@ -206,12 +206,12 @@ public class KrcView extends FrameLayout {
                 color = getResources().getColor(colorRes);
             }
         }
-        return color;
+        return color != 0 ? color : defValue;
     }
 
     private void initPaints(@NonNull TypedArray a) {
         final float minTextSize = a.getDimension(R.styleable.KrcView_min_text_size, sp2px(15));
-        final float maxTextSize = a.getDimension(R.styleable.KrcView_max_text_size, sp2px(18));
+        final float maxTextSize = a.getDimension(R.styleable.KrcView_max_text_size, minTextSize);
         assert (maxTextSize >= minTextSize);
         textPaint.setTextSize(minTextSize);
         maxTextPaint.setTextSize(maxTextSize);
@@ -405,7 +405,7 @@ public class KrcView extends FrameLayout {
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull List<Object> payloads) {
             if (payloads.isEmpty()) {
-                super.onBindViewHolder(holder, position, payloads);
+                onBindViewHolder(holder, position);
                 return;
             }
             final KrcLineView krcLineView = (KrcLineView) holder.itemView;
@@ -475,7 +475,7 @@ public class KrcView extends FrameLayout {
 
 
         void setKrcLineInfo(KrcLineInfo info) {
-            if (info == null || TextUtils.isEmpty(info.text)) {
+            if (info == null || TextUtils.isEmpty(info.text) || info.equals(krcLineInfo)) {
                 return;
             }
             krcLineInfo = info;
@@ -504,8 +504,12 @@ public class KrcView extends FrameLayout {
             if (krcLineInfo == null || krcLineInfo.words == null || krcLineInfo.words.isEmpty() || !isCurrentLine) {
                 return;
             }
+            final Word last = krcLineInfo.words.get(krcLineInfo.words.size() - 1);
+            if (lineProgress > last.endTimeMs()) {
+                return;
+            }
             this.lineProgress = lineProgress;
-            invalidate();
+            KrcLineView.this.invalidate();
         }
 
 
@@ -536,11 +540,13 @@ public class KrcView extends FrameLayout {
         @SuppressLint("DrawAllocation")
         @Override
         protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+
             if (checkKrcDataInvalid()) {
                 super.onMeasure(widthMeasureSpec, heightMeasureSpec);
                 return;
             }
-
+            // 必须按照text最大尺寸 测量
+            lineTextPaint.setTextSize(maxTextPaint.getTextSize());
             float contentWidth;
             final int widthMeasureMode = MeasureSpec.getMode(widthMeasureSpec);
             switch (widthMeasureMode) {
@@ -560,8 +566,11 @@ public class KrcView extends FrameLayout {
             for (int i = 0; i < localMaxWordsPerLine; i++) {
                 maxWordsWidth += maxTextPaint.measureText(krcLineInfo.words.get(i).text);
             }
-            staticLayout = new StaticLayout(krcLineInfo.text, lineTextPaint, (int) maxWordsWidth,
-                    Layout.Alignment.ALIGN_CENTER, 1f, 0.0f, false);
+
+            if (staticLayout == null || !staticLayout.getText().equals(krcLineInfo.text)) {
+                staticLayout = new StaticLayout(krcLineInfo.text, lineTextPaint, (int) maxWordsWidth,
+                        Layout.Alignment.ALIGN_CENTER, 1f, 0.0f, false);
+            }
 
             if (widthMeasureMode == MeasureSpec.AT_MOST || widthMeasureMode == MeasureSpec.UNSPECIFIED) {
                 contentWidth = maxWordsWidth;
@@ -581,13 +590,15 @@ public class KrcView extends FrameLayout {
                     contentHeight = MeasureSpec.getSize(heightMeasureSpec);
                     break;
             }
-            Log.i(TAG, "===> onMeasure:width:" + contentWidth + " height : " + contentHeight);
+            Log.i(TAG, "===> onMeasure position:" + bindPosition + " object:" + KrcLineView.this.hashCode());
+            lineTextPaint.setTextSize(textPaint.getTextSize());
             setMeasuredDimension((int) contentWidth, (int) contentHeight);
         }
 
         private boolean checkKrcDataInvalid() {
             return krcLineInfo == null || krcLineInfo.words == null;
         }
+
 
         @Override
         protected void onDraw(Canvas canvas) {
@@ -700,7 +711,7 @@ public class KrcView extends FrameLayout {
 
         @Override
         public void onAnimationUpdate(ValueAnimator animation) {
-            float size = (float) animation.getAnimatedValue();
+            final float size = (float) animation.getAnimatedValue();
             lineTextPaint.setTextSize(size);
             invalidate();
         }
@@ -715,7 +726,6 @@ public class KrcView extends FrameLayout {
 
         @Override
         public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
-            super.onScrollStateChanged(recyclerView, newState);
             switch (newState) {
                 case RecyclerView.SCROLL_STATE_DRAGGING:
                     isUserDragging = true;
@@ -760,9 +770,12 @@ public class KrcView extends FrameLayout {
             if (curVH == null) {
                 return;
             }
-            locateViewTopOffset = curVH.itemView.getBottom() - (locatedView.getHeight() >> 1);
-            Log.i(TAG, "===>updateLocateViewTopOffset: " + locateViewTopOffset);
-            requestLayout();
+            final int newLocateViewTopOffset = curVH.itemView.getBottom() - (locatedView.getHeight() >> 1);
+            if (newLocateViewTopOffset != locateViewTopOffset) {
+                locateViewTopOffset = newLocateViewTopOffset;
+                Log.i(TAG, "===>updateLocateViewTopOffset: " + locateViewTopOffset);
+                requestLayout();
+            }
         }
 
         private void tryToHideLocatedViewDelay() {
