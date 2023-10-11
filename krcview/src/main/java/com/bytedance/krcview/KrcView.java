@@ -25,6 +25,7 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
@@ -98,6 +99,7 @@ public class KrcView extends FrameLayout {
     // 拖拽歌词的时候出现在当前行底部的那个view。
     private View locatedView;
     private int locateViewTopOffset = 0;
+    private boolean isUserInputEnabled = true;
 
 
     private final Runnable hideLocatedViewTask = () -> {
@@ -125,7 +127,16 @@ public class KrcView extends FrameLayout {
 
     public KrcView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        recyclerView = new RecyclerView(context);
+        recyclerView = new RecyclerView(context){
+            @SuppressLint("ClickableViewAccessibility")
+            @Override
+            public boolean onTouchEvent(MotionEvent e) {
+                if (!isUserInputEnabled && e.getAction() == MotionEvent.ACTION_MOVE) {
+                    return true;
+                }
+                return super.onTouchEvent(e);
+            }
+        };
         final LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         addView(recyclerView, lp);
         topSmoothScroller = new LinearSmoothScroller(getContext()) {
@@ -193,6 +204,7 @@ public class KrcView extends FrameLayout {
         normalTextColor = readAttrColor(a, R.styleable.KrcView_normal_text_color, Color.WHITE);
         currentLineTextColor = readAttrColor(a, R.styleable.KrcView_current_line_text_color, normalTextColor);
         currentLineHLTextColor = readAttrColor(a, R.styleable.KrcView_current_line_highLight_text_color, Color.GREEN);
+        isUserInputEnabled = a.getBoolean(R.styleable.KrcView_isUserInputEnabled, true);
         a.recycle();
         if (lineSpace > 0f) {
             recyclerView.addItemDecoration(new ItemDecoration() {
@@ -250,6 +262,15 @@ public class KrcView extends FrameLayout {
         assert duration >= 0;
         this.textScaleAnimDuration = duration;
     }
+
+    public boolean isUserInputEnabled() {
+        return isUserInputEnabled;
+    }
+
+    public void setUserInputEnabled(boolean userInputEnabled) {
+        isUserInputEnabled = userInputEnabled;
+    }
+
 
     // 设置当前歌词进度。
     public final void setProgress(final long progress) {
