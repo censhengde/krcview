@@ -5,11 +5,21 @@ krcview 目前仿酷狗音乐app实现了歌词蠕动、滑动定位等功能，
 ## 二，使用方式
 ### 1.在工程根目录 build.gradle 文件添加代码：
 ```agsl
+allprojects {
+    repositories {
+			
+        maven { url 'https://jitpack.io' }
 
+       }
+	}
 ```
 ### 2. 在app module build.gradle 文件添加代码：
 ```agsl
+dependencies {
 
+       implementation 'com.github.censhengde:krcview:$lastVersion'
+
+	}
 ```
 ### 3. 常用控件属性或api说明:
 xml 部分：
@@ -47,4 +57,5 @@ java/kotlin代码部分：
 更多api用法详见app module。
 ## 四，问题反馈渠道
 加QQ群：
+
 ![image](https://github.com/censhengde/rv-multi-itemtype/blob/master/image/MultiAdapter%E9%97%AE%E9%A2%98%E5%8F%8D%E9%A6%88%E7%BE%A4%E7%BE%A4%E8%81%8A%E4%BA%8C%E7%BB%B4%E7%A0%81.png)
