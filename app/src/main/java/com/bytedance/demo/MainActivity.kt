@@ -52,15 +52,25 @@ class MainActivity : AppCompatActivity(), KrcView.onDraggingListener {
             }
 
         })
-        LocatedViewBinding.inflate(layoutInflater, vb.krcView, false).run {
-            // 点击跳转指定进度。
-            btnSeekTo.setOnClickListener {
-                progress = skipProgress
-                vb.krcView.setProgress(skipProgress)
-                vb.seekBar.progress = skipProgress.toInt()
+//        LocatedViewBinding.inflate(layoutInflater, vb.krcView, false).run {
+//            // 点击跳转指定进度。
+//            btnSeekTo.setOnClickListener {
+//                progress = skipProgress
+//                vb.krcView.setProgress(skipProgress)
+//                vb.seekBar.progress = skipProgress.toInt()
+//            }
+//            // 设置 located view
+//            vb.krcView.locatedView = this.root
+//        }
+        vb.krcView.locatedView?.let {
+            LocatedViewBinding.bind(it).run {
+                // 点击跳转指定进度。
+                btnSeekTo.setOnClickListener {
+                    progress = skipProgress
+                    vb.krcView.setProgress(skipProgress)
+                    vb.seekBar.progress = skipProgress.toInt()
+                }
             }
-            // 设置 located view
-            vb.krcView.locatedView = this.root
         }
         // 设置拖拽歌词监听器
         vb.krcView.setOnDraggingListener(this)

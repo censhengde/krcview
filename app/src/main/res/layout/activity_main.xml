@@ -20,6 +20,7 @@
             app:max_text_size="18sp"
             app:min_text_size="15sp"
             app:maxWordsPerLine="15"
+            app:located_view_layout="@layout/located_view"
             app:current_line_top_offset="70dp"
             android:layout_marginBottom="10dp" />
 
