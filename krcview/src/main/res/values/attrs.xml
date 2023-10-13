@@ -10,6 +10,7 @@
         <attr name="current_line_top_offset" format="dimension" />
         <attr name="maxWordsPerLine" format="integer" />
         <attr name="isUserInputEnabled" format="boolean" />
+        <attr name="located_view_layout" format="reference" />
     </declare-styleable>
 
 </resources>

@@ -25,6 +25,7 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,6 +35,7 @@ import androidx.annotation.ColorInt;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.view.LayoutInflaterCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
@@ -127,7 +129,7 @@ public class KrcView extends FrameLayout {
 
     public KrcView(@NonNull Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-        recyclerView = new RecyclerView(context){
+        recyclerView = new RecyclerView(context) {
             @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouchEvent(MotionEvent e) {
@@ -205,6 +207,11 @@ public class KrcView extends FrameLayout {
         currentLineTextColor = readAttrColor(a, R.styleable.KrcView_current_line_text_color, normalTextColor);
         currentLineHLTextColor = readAttrColor(a, R.styleable.KrcView_current_line_highLight_text_color, Color.GREEN);
         isUserInputEnabled = a.getBoolean(R.styleable.KrcView_isUserInputEnabled, true);
+        final int locatedViewLayoutId = a.getResourceId(R.styleable.KrcView_located_view_layout, View.NO_ID);
+        if (locatedViewLayoutId != View.NO_ID) {
+            locatedView = LayoutInflater.from(getContext()).inflate(locatedViewLayoutId, this, false);
+            setLocatedView(locatedView);
+        }
         a.recycle();
         if (lineSpace > 0f) {
             recyclerView.addItemDecoration(new ItemDecoration() {
@@ -365,6 +372,7 @@ public class KrcView extends FrameLayout {
         locatedView = view;
         view.setVisibility(View.INVISIBLE);
         addView(view);
+        post(this::updateLocateViewTopOffset);
     }
 
 
@@ -389,6 +397,7 @@ public class KrcView extends FrameLayout {
             }
         }
         recyclerView.setAdapter(new AdapterImpl());
+        post(this::updateLocateViewTopOffset);
     }
 
 
@@ -544,8 +553,7 @@ public class KrcView extends FrameLayout {
                 return;
             }
             this.lineProgress = lineProgress;
-//            KrcLineView.this.invalidate();
-            invalidate();
+            KrcLineView.this.invalidate();
         }
 
 
@@ -792,27 +800,13 @@ public class KrcView extends FrameLayout {
 
         private void tryToShowLocatedView() {
             removeCallbacks(hideLocatedViewTask);
-            if (locatedView == null || curLineIndex < 0 || locatedView.getVisibility() == View.VISIBLE) {
+            if (locatedView == null || locatedView.getVisibility() == View.VISIBLE) {
                 return;
             }
             locatedView.setVisibility(View.VISIBLE);
         }
 
-        private void updateLocateViewTopOffset() {
-            if (locatedView == null || curLineIndex < 0 || locatedView.getVisibility() == View.VISIBLE) {
-                return;
-            }
-            final ViewHolder curVH = recyclerView.findViewHolderForAdapterPosition(curLineIndex);
-            if (curVH == null) {
-                return;
-            }
-            final int newLocateViewTopOffset = curVH.itemView.getBottom() - (locatedView.getHeight() >> 1);
-            if (newLocateViewTopOffset != locateViewTopOffset) {
-                locateViewTopOffset = newLocateViewTopOffset;
-                logI("===>updateLocateViewTopOffset: " + locateViewTopOffset);
-                requestLayout();
-            }
-        }
+
 
         private void tryToHideLocatedViewDelay() {
             if (locatedView == null || locatedView.getVisibility() != VISIBLE) {
@@ -822,10 +816,10 @@ public class KrcView extends FrameLayout {
         }
 
         private void notifyStartDragging() {
-            if (onDraggingListener == null || curLineIndex < 0) {
+            if (onDraggingListener == null) {
                 return;
             }
-            final ViewHolder cur = recyclerView.findViewHolderForAdapterPosition(curLineIndex);
+            final ViewHolder cur = recyclerView.findViewHolderForAdapterPosition(curLineIndex == -1 ? 0 : curLineIndex);
             if (cur != null) {
                 locatedItemView = (KrcLineView) cur.itemView;
                 onDraggingListener.onStartDragging(KrcView.this, locatedItemView.krcLineInfo,
@@ -873,6 +867,22 @@ public class KrcView extends FrameLayout {
         }
     };
 
+    private void updateLocateViewTopOffset() {
+        if (locatedView == null || locatedView.getVisibility() == View.VISIBLE) {
+            return;
+        }
+        final ViewHolder curVH = recyclerView.findViewHolderForAdapterPosition(
+                curLineIndex == -1 ? 0 : curLineIndex);
+        if (curVH == null) {
+            return;
+        }
+        final int newLocateViewTopOffset = curVH.itemView.getBottom() - (locatedView.getHeight() >> 1);
+        if (newLocateViewTopOffset != locateViewTopOffset) {
+            locateViewTopOffset = newLocateViewTopOffset;
+            logI("===>updateLocateViewTopOffset: " + locateViewTopOffset);
+            requestLayout();
+        }
+    }
     public interface onDraggingListener {
 
         /**
