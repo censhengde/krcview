@@ -807,7 +807,6 @@ public class KrcView extends FrameLayout {
         }
 
 
-
         private void tryToHideLocatedViewDelay() {
             if (locatedView == null || locatedView.getVisibility() != VISIBLE) {
                 return;
@@ -861,7 +860,11 @@ public class KrcView extends FrameLayout {
             }
             final KrcLineView cur = getLocatedItemView();
             if (cur != null) {
-                onDraggingListener.onDragging(KrcView.this, locatedItemView != cur, cur.krcLineInfo,
+                final boolean positionChanged = locatedItemView != cur;
+                if (positionChanged) {
+                    locatedItemView = cur;
+                }
+                onDraggingListener.onDragging(KrcView.this, positionChanged, cur.krcLineInfo,
                         cur.bindPosition);
             }
         }
@@ -883,6 +886,7 @@ public class KrcView extends FrameLayout {
             requestLayout();
         }
     }
+
     public interface onDraggingListener {
 
         /**
