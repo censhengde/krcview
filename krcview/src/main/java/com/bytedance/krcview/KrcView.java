@@ -2,23 +2,12 @@ package com.bytedance.krcview;
 
 import static java.util.Collections.emptyList;
 
-import android.animation.ValueAnimator;
-import android.animation.ValueAnimator.AnimatorUpdateListener;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.TypedArray;
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Rect;
-import android.graphics.Shader.TileMode;
-import android.graphics.Typeface;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
-import android.service.quickaccesswallet.GetWalletCardsError;
-import android.text.Layout;
-import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.AttributeSet;
@@ -29,13 +18,11 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.LinearInterpolator;
 import android.widget.FrameLayout;
 import androidx.annotation.ColorInt;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.view.LayoutInflaterCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.LinearSmoothScroller;
 import androidx.recyclerview.widget.RecyclerView;
@@ -44,11 +31,8 @@ import androidx.recyclerview.widget.RecyclerView.OnScrollListener;
 import androidx.recyclerview.widget.RecyclerView.State;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import com.bytedance.krcview.KrcLineInfo.Word;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
-import org.lsposed.hiddenapibypass.HiddenApiBypass;
 
 /**
  * Author：Shengde·Cen on 2023/2/15 14:09
@@ -68,27 +52,28 @@ public class KrcView extends FrameLayout {
     // 进度。单位：毫秒。
     private long progress = 0L;
     // 单行歌词最大限制字数，超过字数则换行。
-    private int maxWordsPerLine = 7;
+    int maxWordsPerLine = 7;
+
 
     // 当前行高亮歌词颜色。（即已唱部分歌词颜色）
     @ColorInt
-    private int currentLineHLTextColor = 0;
+    int currentLineHLTextColor = 0;
 
     // 当前行普通歌词颜色。（即当前行未唱部分歌词颜色）
     @ColorInt
-    private int currentLineTextColor = 0;
+    int currentLineTextColor = 0;
     // 其他行普通歌词颜色。
     @ColorInt
-    private int normalTextColor = 0;
+    int normalTextColor = 0;
 
     // 歌词行间距，单位：像素。
     private float lineSpace = 0f;
     // 当前行歌词具体控件顶部距离。单位：像素。
     private int currentLineTopOffset;
 
-    private final TextPaint textPaint = new TextPaint();
-    private final Paint maxTextPaint = new Paint();
-    private int textScaleAnimDuration = 200;
+    final TextPaint textPaint = new TextPaint();
+    final Paint maxTextPaint = new Paint();
+    int textScaleAnimDuration = 200;
 
 
     private onDraggingListener onDraggingListener;
@@ -111,7 +96,7 @@ public class KrcView extends FrameLayout {
         locatedView.setVisibility(View.INVISIBLE);
     };
 
-    private static void logI(String msg) {
+    static void logI(String msg) {
         if (BuildConfig.DEBUG) {
             Log.i(TAG, msg);
         }
@@ -278,6 +263,21 @@ public class KrcView extends FrameLayout {
         isUserInputEnabled = userInputEnabled;
     }
 
+    public int getMaxWordsPerLine() {
+        return maxWordsPerLine;
+    }
+
+    public int getCurrentLineHLTextColor() {
+        return currentLineHLTextColor;
+    }
+
+    public int getCurrentLineTextColor() {
+        return currentLineTextColor;
+    }
+
+    public int getNormalTextColor() {
+        return normalTextColor;
+    }
 
     // 设置当前歌词进度。
     public final void setProgress(final long progress) {
@@ -434,11 +434,7 @@ public class KrcView extends FrameLayout {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            final View krcLineView = new KrcLineView(parent.getContext());
-            krcLineView.setLayoutParams(
-                    new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-            return new ViewHolder(krcLineView) {
-            };
+            return KrcView.this.onCreateViewHolder(parent, viewType);
         }
 
         @Override
@@ -452,7 +448,7 @@ public class KrcView extends FrameLayout {
                 onBindViewHolder(holder, position);
                 return;
             }
-            final KrcLineView krcLineView = (KrcLineView) holder.itemView;
+            final LineHolder krcLineView = (LineHolder) holder;
             for (Object payload : payloads) {
                 if (payload instanceof Boolean) {
                     krcLineView.setIsCurrentLine((Boolean) payload);
@@ -465,300 +461,19 @@ public class KrcView extends FrameLayout {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, @SuppressLint("RecyclerView") int position) {
-            final KrcLineView krcLineView = (KrcLineView) holder.itemView;
+            final LineHolder lineHolder = (LineHolder) holder;
             final KrcLineInfo lineInfo = krcData.get(position);
-            krcLineView.reset();
-            krcLineView.setIsCurrentLine(position == curLineIndex);
-            krcLineView.setKrcLineInfo(lineInfo);
-            krcLineView.bindPosition = position;
+            lineHolder.setKrcLineInfo(lineInfo);
+            lineHolder.setIsCurrentLine(position == curLineIndex);
         }
     }
 
-    private class KrcLineView extends View implements AnimatorUpdateListener {
-
-        private static final String TAG = "KrcLineView";
-
-        private KrcLineInfo krcLineInfo;
-
-        private boolean isCurrentLine;
-
-        private long lineProgress;
-        private int bindPosition;
-
-        private final int[] currentLineColors = new int[2];
-        private final float[] currentLineColorPositions = new float[2];
-        private final ValueAnimator curLineTextScaleAnima = new ValueAnimator();
-        private Method drawTextMethod;
-        // 实现单句过长歌词自动换行的工具类
-        private StaticLayout staticLayout;
-        private final TextPaint lineTextPaint = new TextPaint();
-
-
-        public KrcLineView(Context context) {
-            this(context, null);
-        }
-
-        public KrcLineView(Context context, AttributeSet attrs) {
-            this(context, attrs, 0);
-        }
-
-        public KrcLineView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-            super(context, attrs, defStyleAttr);
-            initView();
-            curLineTextScaleAnima.addUpdateListener(this);
-            curLineTextScaleAnima.setDuration(textScaleAnimDuration);
-            curLineTextScaleAnima.setInterpolator(new LinearInterpolator());
-            lineTextPaint.set(textPaint);
-        }
-
-        private void initView() {
-            setIsCurrentLine(false);
-            currentLineColors[0] = currentLineHLTextColor;
-            currentLineColors[1] = currentLineTextColor;
-        }
-
-
-        void setKrcLineInfo(KrcLineInfo info) {
-            if (info == null || TextUtils.isEmpty(info.text) || info.equals(krcLineInfo)) {
-                return;
-            }
-            krcLineInfo = info;
-            float previousWordsWidth = 0;
-            if (info.words != null) {
-                // 将一句歌词的每个字（Word）组织成一条链，方便后面设置lineProgress通过二分法快速定位到当前歌词。
-                for (int i = 0; i < info.words.size(); i++) {
-                    final Word word = info.words.get(i);
-                    /**
-                     * 为了后面能够一步到位算出当前行已唱部分歌词长度，这里需要提前将当前歌词（word）之前的所有歌词的最大总长度记录下来。
-                     * @see #calculateHighLightWidth(long)
-                     */
-                    word.previousWordsWidth = previousWordsWidth;
-                    word.textWidth = maxTextPaint.measureText(word.text);
-                    previousWordsWidth += word.textWidth;
-                    final int next = i + 1;
-                    if (next < info.words.size()) {
-                        word.next = info.words.get(next);
-                    }
-                }
-            }
-            KrcLineView.this.requestLayout();
-        }
-
-        void setLineProgress(final long lineProgress) {
-            if (krcLineInfo == null || krcLineInfo.words == null || krcLineInfo.words.isEmpty() || !isCurrentLine) {
-                return;
-            }
-            final Word last = krcLineInfo.words.get(krcLineInfo.words.size() - 1);
-            if (lineProgress > last.endTimeMs()) {
-                return;
-            }
-            this.lineProgress = lineProgress;
-            KrcLineView.this.invalidate();
-        }
-
-
-        void setIsCurrentLine(boolean isCurrentLine) {
-            if (this.isCurrentLine == isCurrentLine) {
-                return;
-            }
-            this.isCurrentLine = isCurrentLine;
-            final float minTextSize = textPaint.getTextSize();
-            final float maxTextSize = maxTextPaint.getTextSize();
-            assert maxTextSize >= minTextSize;
-            if (maxTextSize > minTextSize) {
-                curLineTextScaleAnima.cancel();
-                if (isCurrentLine) {
-                    curLineTextScaleAnima.setFloatValues(minTextSize, maxTextSize);
-                } else {
-                    curLineTextScaleAnima.setFloatValues(maxTextSize, minTextSize);
-                }
-                curLineTextScaleAnima.start();
-            }
-        }
-
-        void reset() {
-            lineProgress = 0;
-            bindPosition = 0;
-        }
-
-        @SuppressLint("DrawAllocation")
-        @Override
-        protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-
-            if (checkKrcDataInvalid()) {
-                super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-                return;
-            }
-            // 必须按照text最大尺寸 测量
-            lineTextPaint.setTextSize(maxTextPaint.getTextSize());
-            float contentWidth;
-            final int widthMeasureMode = MeasureSpec.getMode(widthMeasureSpec);
-            switch (widthMeasureMode) {
-                case MeasureSpec.AT_MOST:
-                case MeasureSpec.UNSPECIFIED:
-                    contentWidth =
-                            maxTextPaint.measureText(krcLineInfo.text) + getPaddingStart() + getPaddingEnd();
-                    logI("===> onMeasure:width MeasureSpec.AT_MOST,contentWidth: " + contentWidth);
-                    break;
-                case MeasureSpec.EXACTLY:
-                default:
-                    contentWidth = MeasureSpec.getSize(widthMeasureSpec);
-                    break;
-            }
-            final int localMaxWordsPerLine = Math.min(maxWordsPerLine, krcLineInfo.words.size());
-            float maxWordsWidth = 0;
-            for (int i = 0; i < localMaxWordsPerLine; i++) {
-                maxWordsWidth += maxTextPaint.measureText(krcLineInfo.words.get(i).text);
-            }
-
-            if (staticLayout == null || !staticLayout.getText().equals(krcLineInfo.text)) {
-                staticLayout = new StaticLayout(krcLineInfo.text, lineTextPaint, (int) maxWordsWidth,
-                        Layout.Alignment.ALIGN_CENTER, 1f, 0.0f, false);
-            }
-
-            if (widthMeasureMode == MeasureSpec.AT_MOST || widthMeasureMode == MeasureSpec.UNSPECIFIED) {
-                contentWidth = maxWordsWidth;
-            }
-
-            float contentHeight;
-            final int heightMeasureMode = MeasureSpec.getMode(heightMeasureSpec);
-            switch (heightMeasureMode) {
-                case MeasureSpec.AT_MOST:
-                case MeasureSpec.UNSPECIFIED:
-                    contentHeight =
-                            (staticLayout == null ? 0 : staticLayout.getHeight()) + getPaddingTop()
-                                    + getPaddingBottom();
-                    break;
-                case MeasureSpec.EXACTLY:
-                default:
-                    contentHeight = MeasureSpec.getSize(heightMeasureSpec);
-                    break;
-            }
-            logI("===> onMeasure position:" + bindPosition + " object:" + KrcLineView.this.hashCode());
-            lineTextPaint.setTextSize(textPaint.getTextSize());
-            setMeasuredDimension((int) contentWidth, (int) contentHeight);
-        }
-
-        private boolean checkKrcDataInvalid() {
-            return krcLineInfo == null || krcLineInfo.words == null;
-        }
-
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            if (canvas != null) {
-                drawText(canvas);
-            }
-        }
-
-        private void drawText(@NonNull Canvas canvas) {
-            if (checkKrcDataInvalid() || staticLayout == null) {
-                return;
-            }
-
-            canvas.save();
-            final float contentWidth = getWidth() - getPaddingStart() - getPaddingEnd();
-            final float translateX = (contentWidth - staticLayout.getWidth()) * 0.5f;
-            final float translateY = getPaddingTop();
-            canvas.translate(translateX, translateY);
-            // draw current line high light text
-            if (isCurrentLine) {
-                final float totalHlWidth = calculateHighLightWidth(this.lineProgress);
-                float totalTextWidth = 0;
-                for (int i = 0; i < staticLayout.getLineCount(); i++) {
-                    float lineTextWidth = staticLayout.getLineWidth(i);
-                    totalTextWidth += lineTextWidth;
-                    final float left = (staticLayout.getWidth() - lineTextWidth) * 0.5f;
-                    final float right = left + lineTextWidth;
-                    if (totalHlWidth >= totalTextWidth) {
-                        currentLineColorPositions[0] = 1.0f;
-                        currentLineColorPositions[1] = 0.0f;
-
-                    } else if ((totalTextWidth - totalHlWidth) < lineTextWidth) {
-                        final float pos = 1.0f - (totalTextWidth - totalHlWidth) / lineTextWidth;
-                        currentLineColorPositions[0] = pos;
-                        currentLineColorPositions[1] = pos;
-                    } else {
-                        currentLineColorPositions[0] = 0;
-                        currentLineColorPositions[1] = 0;
-                    }
-                    final LinearGradient linearGradient = new LinearGradient(left, 0, right, 0, currentLineColors,
-                            currentLineColorPositions, TileMode.CLAMP);
-                    lineTextPaint.setShader(linearGradient);
-                    drawLineText(canvas, i);
-                }
-
-            }
-            // draw normal text
-            else {
-                lineTextPaint.setShader(null);
-                lineTextPaint.setColor(normalTextColor);
-                for (int i = 0; i < staticLayout.getLineCount(); i++) {
-                    drawLineText(canvas, i);
-                }
-            }
-            canvas.restore();
-        }
-
-        @SuppressLint({"SoonBlockedPrivateApi", "DiscouragedPrivateApi"})
-        private void drawLineText(Canvas canvas, int line) {
-            if (staticLayout == null || canvas == null) {
-                return;
-            }
-            try {
-                final String methodName = "drawText";
-                if (VERSION.SDK_INT >= VERSION_CODES.P) {
-                    HiddenApiBypass.invoke(Layout.class, staticLayout, methodName, canvas, line, line);
-                } else {
-                    if (drawTextMethod == null) {
-                        drawTextMethod = Layout.class.getDeclaredMethod(methodName, Canvas.class, int.class, int.class);
-                        drawTextMethod.setAccessible(true);
-                    }
-                    drawTextMethod.invoke(staticLayout, canvas, line, line);
-                }
-
-            } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
-
-        }
-
-
-        /**
-         * 计算当前行高亮文字的宽度
-         *
-         * @param lineProgress 相对当前行歌词开始时间的进度。
-         * @return 当前行高亮文字的宽度
-         */
-        private float calculateHighLightWidth(long lineProgress) {
-            if (checkKrcDataInvalid()) {
-                return 0;
-            }
-            if (lineProgress < krcLineInfo.words.get(0).startTimeMs) {
-                return 0;
-            }
-
-            final int curWordIndex = Collections.binarySearch(krcLineInfo.words, lineProgress);
-            if (curWordIndex < 0) {
-                return 0;
-            }
-            final Word curWord = krcLineInfo.words.get(curWordIndex);
-            if (curWord.duration == 0L) {
-                return curWord.previousWordsWidth;
-            }
-
-            final long cutoffDuration = Math.min(curWord.duration, lineProgress - curWord.startTimeMs);
-            final float curWordWidth = curWord.textWidth;
-            final float curWordHLWidth = Math.min(curWordWidth, curWordWidth / curWord.duration * cutoffDuration);
-            return curWord.previousWordsWidth + curWordHLWidth;
-        }
-
-        @Override
-        public void onAnimationUpdate(ValueAnimator animation) {
-            final float size = (float) animation.getAnimatedValue();
-            lineTextPaint.setTextSize(size);
-            invalidate();
-        }
+    @NonNull
+    protected LineHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        final KrcLineView krcLineView = new KrcLineView(parent.getContext());
+        krcLineView.setLayoutParams(
+                new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        return new LineHolder(KrcView.this, krcLineView, krcLineView);
     }
 
 
@@ -766,7 +481,7 @@ public class KrcView extends FrameLayout {
         // 是否用户主动拖拽。用于区别RecyclerView 其他因素触发的滚动。
         private boolean isUserDragging = false;
 
-        private KrcLineView locatedItemView;
+        private LineHolder locatedViewHolder;
 
         @Override
         public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -784,7 +499,7 @@ public class KrcView extends FrameLayout {
                         isUserDragging = false;
                         tryToHideLocatedViewDelay();
                         notifyStopDragging();
-                        locatedItemView = null;
+                        locatedViewHolder = null;
                     }
                     //
                     else {
@@ -819,29 +534,34 @@ public class KrcView extends FrameLayout {
                 return;
             }
             final ViewHolder cur = recyclerView.findViewHolderForAdapterPosition(curLineIndex == -1 ? 0 : curLineIndex);
-            if (cur != null) {
-                locatedItemView = (KrcLineView) cur.itemView;
-                onDraggingListener.onStartDragging(KrcView.this, locatedItemView.krcLineInfo,
-                        locatedItemView.bindPosition);
+            if (cur instanceof LineHolder) {
+                locatedViewHolder = (LineHolder) cur;
+                onDraggingListener.onStartDragging(KrcView.this, locatedViewHolder.krcLineInfo,
+                        locatedViewHolder.getBindingAdapterPosition());
             }
         }
 
         private void notifyStopDragging() {
-            if (onDraggingListener == null || locatedItemView == null) {
+            if (onDraggingListener == null || locatedViewHolder == null) {
                 return;
             }
-            onDraggingListener.onStopDragging(KrcView.this, locatedItemView.krcLineInfo, locatedItemView.bindPosition);
+            onDraggingListener.onStopDragging(KrcView.this, locatedViewHolder.krcLineInfo,
+                    locatedViewHolder.getBindingAdapterPosition());
         }
 
         @Nullable
-        private KrcLineView getLocatedItemView() {
+        private LineHolder getLocatedViewHolder() {
             if (locatedView == null || locatedView.getVisibility() != View.VISIBLE) {
                 return null;
             }
             final float centerX = locatedView.getLeft() + (locatedView.getWidth() >> 1);
             final float centerY = locatedView.getTop() + (locatedView.getHeight() >> 1);
             final View view = recyclerView.findChildViewUnder(centerX, centerY);
-            return view instanceof KrcLineView ? (KrcLineView) view : null;
+            if (view == null || view.getLayoutParams() == null) {
+                return null;
+            }
+            return (LineHolder) recyclerView.findContainingViewHolder(view);
+
         }
 
         @Override
@@ -855,17 +575,17 @@ public class KrcView extends FrameLayout {
         }
 
         private void notifyDragging() {
-            if (onDraggingListener == null || locatedItemView == null) {
+            if (onDraggingListener == null || locatedViewHolder == null) {
                 return;
             }
-            final KrcLineView cur = getLocatedItemView();
+            final LineHolder cur = getLocatedViewHolder();
             if (cur != null) {
-                final boolean positionChanged = locatedItemView != cur;
+                final boolean positionChanged = locatedViewHolder != cur;
                 if (positionChanged) {
-                    locatedItemView = cur;
+                    locatedViewHolder = cur;
                 }
                 onDraggingListener.onDragging(KrcView.this, positionChanged, cur.krcLineInfo,
-                        cur.bindPosition);
+                        cur.getBindingAdapterPosition());
             }
         }
     };
@@ -918,5 +638,108 @@ public class KrcView extends FrameLayout {
         default void onStopDragging(@NonNull KrcView krcView, @NonNull KrcLineInfo info, int position) {
         }
     }
+
+    public static class LineHolder extends ViewHolder {
+
+        private static final String TAG = LineHolder.class.getSimpleName();
+
+        private final CallBack callBack;
+        private KrcLineInfo krcLineInfo;
+
+        private boolean isCurrentLine;
+
+        private long lineProgress;
+
+        public final KrcView krcView;
+
+        public LineHolder(@NonNull KrcView krcView, @NonNull View itemView, @NonNull CallBack callBack) {
+            super(itemView);
+            this.krcView = krcView;
+            this.callBack = callBack;
+            callBack.attachedViewHolder(this);
+        }
+
+
+        public void setLineProgress(final long lineProgress) {
+            if (krcLineInfo == null || krcLineInfo.words == null || krcLineInfo.words.isEmpty() || !isCurrentLine) {
+                return;
+            }
+            final Word last = krcLineInfo.words.get(krcLineInfo.words.size() - 1);
+            if (lineProgress > last.endTimeMs()) {
+                return;
+            }
+            this.lineProgress = lineProgress;
+            if (callBack != null) {
+                callBack.onLineProgressChanged(this, lineProgress);
+            }
+        }
+
+        public KrcLineInfo getKrcLineInfo() {
+            return krcLineInfo;
+        }
+
+        public boolean isCurrentLine() {
+            return isCurrentLine;
+        }
+
+        public void setIsCurrentLine(boolean currentLine) {
+            if (isCurrentLine != currentLine) {
+                isCurrentLine = currentLine;
+                if (callBack != null) {
+                    callBack.isCurrentLineChanged(this, krcView.curLineIndex);
+                }
+            }
+        }
+
+        public long getLineProgress() {
+            return lineProgress;
+        }
+
+        public void setKrcLineInfo(KrcLineInfo info) {
+            lineProgress = 0;
+            if (info == null || TextUtils.isEmpty(info.text) || info.equals(krcLineInfo)) {
+                return;
+            }
+            krcLineInfo = info;
+            float previousWordsWidth = 0;
+            if (info.words != null) {
+                // 将一句歌词的每个字（Word）组织成一条链，方便后面设置lineProgress通过二分法快速定位到当前歌词。
+                for (int i = 0; i < info.words.size(); i++) {
+                    final Word word = info.words.get(i);
+                    /**
+                     * 为了后面能够一步到位算出当前行已唱部分歌词长度，这里需要提前将当前歌词（word）之前的所有歌词的最大总长度记录下来。
+                     * @see #calculateHighLightWidth(long)
+                     */
+                    word.previousWordsWidth = previousWordsWidth;
+                    word.textWidth = getTextWidth(word.text);
+                    previousWordsWidth += word.textWidth;
+                    final int next = i + 1;
+                    if (next < info.words.size()) {
+                        word.next = info.words.get(next);
+                    }
+                }
+            }
+            if (callBack != null) {
+                callBack.onLineInfoChanged(this, info);
+            }
+        }
+
+        protected float getTextWidth(@NonNull String text) {
+            return krcView.maxTextPaint.measureText(text);
+        }
+
+        public interface CallBack {
+
+            void attachedViewHolder(@NonNull LineHolder holder);
+
+            void isCurrentLineChanged(@NonNull LineHolder holder, int currentLineIndex);
+
+            void onLineProgressChanged(@NonNull LineHolder holder, final long lineProgress);
+
+            void onLineInfoChanged(@NonNull LineHolder holder, final KrcLineInfo info);
+        }
+
+    }
+
 
 }

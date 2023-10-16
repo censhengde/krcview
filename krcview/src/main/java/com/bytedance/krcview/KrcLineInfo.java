@@ -1,5 +1,6 @@
 package com.bytedance.krcview;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ public class KrcLineInfo implements Comparable<Long> {
     }
 
     public String text;
-    public List<Word> words;
+    public List<Word> words = Collections.emptyList();
     public KrcLineInfo nextKrcLineInfo;
 
     @Override
