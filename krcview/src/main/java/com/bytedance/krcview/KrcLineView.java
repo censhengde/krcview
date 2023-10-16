@@ -12,6 +12,7 @@ import android.graphics.Shader.TileMode;
 import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.text.Layout;
+import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.util.AttributeSet;
@@ -45,6 +46,10 @@ public class KrcLineView extends View implements AnimatorUpdateListener, LineHol
     private LineHolder lineHolder;
 
 
+
+
+    private Layout.Alignment textLayoutAlignment = Alignment.ALIGN_CENTER;
+
     public KrcLineView(Context context) {
         this(context, null);
     }
@@ -59,6 +64,14 @@ public class KrcLineView extends View implements AnimatorUpdateListener, LineHol
         curLineTextScaleAnima.setInterpolator(new LinearInterpolator());
     }
 
+
+    public void setTextLayoutAlignment(Alignment textLayoutAlignment) {
+        this.textLayoutAlignment = textLayoutAlignment;
+    }
+
+    public Alignment getTextLayoutAlignment() {
+        return textLayoutAlignment;
+    }
 
     @Override
     public void attachedViewHolder(@NonNull LineHolder holder) {
@@ -105,7 +118,7 @@ public class KrcLineView extends View implements AnimatorUpdateListener, LineHol
 
         if (staticLayout == null || !staticLayout.getText().equals(krcLineInfo.text)) {
             staticLayout = new StaticLayout(krcLineInfo.text, lineTextPaint, (int) maxWordsWidth,
-                    Layout.Alignment.ALIGN_CENTER, 1f, 0.0f, false);
+                    textLayoutAlignment, 1f, 0.0f, false);
         }
 
         if (widthMeasureMode == MeasureSpec.AT_MOST || widthMeasureMode == MeasureSpec.UNSPECIFIED) {
