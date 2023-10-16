@@ -481,7 +481,7 @@ public class KrcView extends FrameLayout {
         // 是否用户主动拖拽。用于区别RecyclerView 其他因素触发的滚动。
         private boolean isUserDragging = false;
 
-        private LineHolder locatedItemView;
+        private LineHolder locatedViewHolder;
 
         @Override
         public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -499,7 +499,7 @@ public class KrcView extends FrameLayout {
                         isUserDragging = false;
                         tryToHideLocatedViewDelay();
                         notifyStopDragging();
-                        locatedItemView = null;
+                        locatedViewHolder = null;
                     }
                     //
                     else {
@@ -535,18 +535,18 @@ public class KrcView extends FrameLayout {
             }
             final ViewHolder cur = recyclerView.findViewHolderForAdapterPosition(curLineIndex == -1 ? 0 : curLineIndex);
             if (cur instanceof LineHolder) {
-                locatedItemView = (LineHolder) cur;
-                onDraggingListener.onStartDragging(KrcView.this, locatedItemView.krcLineInfo,
-                        locatedItemView.getBindingAdapterPosition());
+                locatedViewHolder = (LineHolder) cur;
+                onDraggingListener.onStartDragging(KrcView.this, locatedViewHolder.krcLineInfo,
+                        locatedViewHolder.getBindingAdapterPosition());
             }
         }
 
         private void notifyStopDragging() {
-            if (onDraggingListener == null || locatedItemView == null) {
+            if (onDraggingListener == null || locatedViewHolder == null) {
                 return;
             }
-            onDraggingListener.onStopDragging(KrcView.this, locatedItemView.krcLineInfo,
-                    locatedItemView.getBindingAdapterPosition());
+            onDraggingListener.onStopDragging(KrcView.this, locatedViewHolder.krcLineInfo,
+                    locatedViewHolder.getBindingAdapterPosition());
         }
 
         @Nullable
@@ -575,14 +575,14 @@ public class KrcView extends FrameLayout {
         }
 
         private void notifyDragging() {
-            if (onDraggingListener == null || locatedItemView == null) {
+            if (onDraggingListener == null || locatedViewHolder == null) {
                 return;
             }
             final LineHolder cur = getLocatedViewHolder();
             if (cur != null) {
-                final boolean positionChanged = locatedItemView != cur;
+                final boolean positionChanged = locatedViewHolder != cur;
                 if (positionChanged) {
-                    locatedItemView = cur;
+                    locatedViewHolder = cur;
                 }
                 onDraggingListener.onDragging(KrcView.this, positionChanged, cur.krcLineInfo,
                         cur.getBindingAdapterPosition());
