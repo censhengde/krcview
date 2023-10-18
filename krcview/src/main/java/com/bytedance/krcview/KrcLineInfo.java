@@ -45,11 +45,8 @@ public class KrcLineInfo implements Comparable<Long>, Parcelable {
         durationMs = in.readLong();
         text = in.readString();
         nextKrcLineInfo = in.readParcelable(KrcLineInfo.class.getClassLoader());
-        final int size = in.readInt();
-        if (size > 0) {
-            words = new ArrayList<>(size);
-            in.readList(words, Word.class.getClassLoader());
-        }
+        words = new ArrayList<>();
+        in.readList(words, Word.class.getClassLoader());
     }
 
     public KrcLineInfo() {
@@ -90,10 +87,7 @@ public class KrcLineInfo implements Comparable<Long>, Parcelable {
         dest.writeLong(durationMs);
         dest.writeString(text);
         dest.writeParcelable(nextKrcLineInfo, flags);
-        if (!words.isEmpty()) {
-            dest.writeInt(words.size());
-            dest.writeList(words);
-        }
+        dest.writeList(words);
     }
 
     public static class Word implements Comparable<Long>, Parcelable {
