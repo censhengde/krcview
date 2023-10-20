@@ -88,6 +88,8 @@ public class KrcView extends FrameLayout {
     private int locateViewTopOffset = 0;
     private boolean isUserInputEnabled = true;
 
+    private LineAdapter lineAdapter;
+
 
     private final Runnable hideLocatedViewTask = () -> {
         if (locatedView == null || locatedView.getVisibility() != View.VISIBLE) {
@@ -279,6 +281,10 @@ public class KrcView extends FrameLayout {
         return normalTextColor;
     }
 
+    public void setLineAdapter(LineAdapter adapter) {
+        this.lineAdapter = adapter;
+    }
+
     // 设置当前歌词进度。
     public final void setProgress(final long progress) {
         if (krcData == null || krcData.isEmpty()) {
@@ -434,7 +440,8 @@ public class KrcView extends FrameLayout {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return KrcView.this.onCreateViewHolder(parent, viewType);
+            return lineAdapter != null ? lineAdapter.onCreateLineHolder(parent, viewType)
+                    : createDefaultLineHolder(parent);
         }
 
         @Override
@@ -469,7 +476,7 @@ public class KrcView extends FrameLayout {
     }
 
     @NonNull
-    protected LineHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    private LineHolder createDefaultLineHolder(ViewGroup parent) {
         final KrcLineView krcLineView = new KrcLineView(parent.getContext());
         krcLineView.setLayoutParams(
                 new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -739,6 +746,11 @@ public class KrcView extends FrameLayout {
             void onLineInfoChanged(@NonNull LineHolder holder, final KrcLineInfo info);
         }
 
+    }
+
+    public interface LineAdapter {
+
+        LineHolder onCreateLineHolder(@NonNull ViewGroup parent, int viewType);
     }
 
 

@@ -15,20 +15,7 @@ import java.util.List;
  * explain：
  */
 @Keep
-public class KrcLineInfo implements Comparable<Long>, Parcelable {
-
-
-    public static final Creator<KrcLineInfo> CREATOR = new Creator<KrcLineInfo>() {
-        @Override
-        public KrcLineInfo createFromParcel(Parcel in) {
-            return new KrcLineInfo(in);
-        }
-
-        @Override
-        public KrcLineInfo[] newArray(int size) {
-            return new KrcLineInfo[size];
-        }
-    };
+public class KrcLineInfo implements Comparable<Long> {
 
     public long startTimeMs;
     public long durationMs;
@@ -38,19 +25,6 @@ public class KrcLineInfo implements Comparable<Long>, Parcelable {
 
     // 用户扩展字段，方便用户赋予其他信息。
     private Bundle userExt;
-
-
-    protected KrcLineInfo(Parcel in) {
-        startTimeMs = in.readLong();
-        durationMs = in.readLong();
-        text = in.readString();
-        nextKrcLineInfo = in.readParcelable(KrcLineInfo.class.getClassLoader());
-        words = new ArrayList<>();
-        in.readList(words, Word.class.getClassLoader());
-    }
-
-    public KrcLineInfo() {
-    }
 
     public long endTimeMs() {
         return startTimeMs + durationMs;
@@ -76,33 +50,8 @@ public class KrcLineInfo implements Comparable<Long>, Parcelable {
         return -1;
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
+    public static class Word implements Comparable<Long> {
 
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeLong(startTimeMs);
-        dest.writeLong(durationMs);
-        dest.writeString(text);
-        dest.writeParcelable(nextKrcLineInfo, flags);
-        dest.writeList(words);
-    }
-
-    public static class Word implements Comparable<Long>, Parcelable {
-
-        public static final Creator<Word> CREATOR = new Creator<Word>() {
-            @Override
-            public Word createFromParcel(Parcel in) {
-                return new Word(in);
-            }
-
-            @Override
-            public Word[] newArray(int size) {
-                return new Word[size];
-            }
-        };
         public long startTimeMs;
         public long duration;
         public String text;
@@ -111,19 +60,6 @@ public class KrcLineInfo implements Comparable<Long>, Parcelable {
 
         public Word next;
         private Bundle userExt;
-
-
-        protected Word(Parcel in) {
-            startTimeMs = in.readLong();
-            duration = in.readLong();
-            text = in.readString();
-            previousWordsWidth = in.readFloat();
-            textWidth = in.readFloat();
-            next = in.readParcelable(Word.class.getClassLoader());
-        }
-
-        public Word() {
-        }
 
         @NonNull
         public Bundle getUserExt() {
@@ -151,19 +87,5 @@ public class KrcLineInfo implements Comparable<Long>, Parcelable {
             return startTimeMs + duration;
         }
 
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel dest, int flags) {
-            dest.writeLong(startTimeMs);
-            dest.writeLong(duration);
-            dest.writeString(text);
-            dest.writeFloat(previousWordsWidth);
-            dest.writeFloat(textWidth);
-            dest.writeParcelable(next, flags);
-        }
     }
 }
