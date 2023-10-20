@@ -440,7 +440,7 @@ public class KrcView extends FrameLayout {
         @NonNull
         @Override
         public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return lineAdapter != null ? lineAdapter.onCreateLineHolder(parent, viewType)
+            return lineAdapter != null ? lineAdapter.onCreateLineHolder(parent, KrcView.this)
                     : createDefaultLineHolder(parent);
         }
 
@@ -750,7 +750,7 @@ public class KrcView extends FrameLayout {
 
     public interface LineAdapter {
 
-        LineHolder onCreateLineHolder(@NonNull ViewGroup parent, int viewType);
+        LineHolder onCreateLineHolder(@NonNull ViewGroup parent, @NonNull KrcView krcView);
     }
 
 
