@@ -663,7 +663,7 @@ public class KrcView extends FrameLayout {
             super(itemView);
             this.krcView = krcView;
             this.callBack = callBack;
-            callBack.attachedViewHolder(this);
+            callBack.onAttachedHolder(this);
         }
 
 
@@ -693,7 +693,7 @@ public class KrcView extends FrameLayout {
             if (isCurrentLine != currentLine) {
                 isCurrentLine = currentLine;
                 if (callBack != null) {
-                    callBack.isCurrentLineChanged(this, krcView.curLineIndex);
+                    callBack.onCurrentLineChanged(this, krcView.curLineIndex);
                 }
             }
         }
@@ -737,9 +737,9 @@ public class KrcView extends FrameLayout {
 
         public interface CallBack {
 
-            void attachedViewHolder(@NonNull LineHolder holder);
+            void onAttachedHolder(@NonNull LineHolder holder);
 
-            void isCurrentLineChanged(@NonNull LineHolder holder, int currentLineIndex);
+            void onCurrentLineChanged(@NonNull LineHolder holder, int currentLineIndex);
 
             void onLineProgressChanged(@NonNull LineHolder holder, final long lineProgress);
 

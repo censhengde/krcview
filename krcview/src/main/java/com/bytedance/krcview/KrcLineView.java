@@ -74,7 +74,7 @@ public class KrcLineView extends View implements AnimatorUpdateListener, LineHol
     }
 
     @Override
-    public void attachedViewHolder(@NonNull LineHolder holder) {
+    public void onAttachedHolder(@NonNull LineHolder holder) {
         lineHolder = holder;
         currentLineColors[0] = holder.krcView.currentLineHLTextColor;
         currentLineColors[1] = holder.krcView.currentLineTextColor;
@@ -276,7 +276,7 @@ public class KrcLineView extends View implements AnimatorUpdateListener, LineHol
     }
 
     @Override
-    public void isCurrentLineChanged(@NonNull LineHolder holder, int currentLineIndex) {
+    public void onCurrentLineChanged(@NonNull LineHolder holder, int currentLineIndex) {
         final float minTextSize = lineHolder.krcView.textPaint.getTextSize();
         final float maxTextSize = lineHolder.krcView.maxTextPaint.getTextSize();
         assert maxTextSize >= minTextSize;
