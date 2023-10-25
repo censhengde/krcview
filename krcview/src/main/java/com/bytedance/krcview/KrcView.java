@@ -552,6 +552,7 @@ public class KrcView extends FrameLayout {
             if (onDraggingListener == null || locatedViewHolder == null) {
                 return;
             }
+            setProgress(locatedViewHolder.getKrcLineInfo().startTimeMs);
             onDraggingListener.onStopDragging(KrcView.this, locatedViewHolder.krcLineInfo,
                     locatedViewHolder.getBindingAdapterPosition());
         }
