@@ -205,10 +205,7 @@ public class KrcView extends FrameLayout {
                 @Override
                 public void getItemOffsets(@NonNull Rect outRect, @NonNull View view, @NonNull RecyclerView parent,
                         @NonNull State state) {
-                    final int position = parent.getChildAdapterPosition(view);
-                    if (position > 0) {
-                        outRect.top = (int) lineSpace;
-                    }
+                    outRect.top = (int) lineSpace;
                 }
             });
         }
