@@ -378,7 +378,7 @@ public class KrcView extends FrameLayout {
         locatedView = view;
         view.setVisibility(View.INVISIBLE);
         addView(view);
-        post(this::updateLocateViewTopOffset);
+        post(() -> updateLocateViewTopOffset(curLineIndex));
     }
 
 
@@ -403,7 +403,7 @@ public class KrcView extends FrameLayout {
             }
         }
         recyclerView.setAdapter(new AdapterImpl());
-        post(this::updateLocateViewTopOffset);
+        post(() -> updateLocateViewTopOffset(curLineIndex));
     }
 
 
@@ -508,11 +508,7 @@ public class KrcView extends FrameLayout {
                         notifyStopDragging();
                         locatedViewHolder = null;
                     }
-                    //
-                    else {
-                        //
-                        updateLocateViewTopOffset();
-                    }
+
                     break;
                 default:
                     break;
@@ -540,9 +536,9 @@ public class KrcView extends FrameLayout {
             if (onDraggingListener == null) {
                 return;
             }
-            final ViewHolder cur = recyclerView.findViewHolderForAdapterPosition(curLineIndex == -1 ? 0 : curLineIndex);
-            if (cur instanceof LineHolder) {
-                locatedViewHolder = (LineHolder) cur;
+            final LineHolder cur = getLocatedViewHolder();
+            if (cur != null) {
+                locatedViewHolder = cur;
                 onDraggingListener.onStartDragging(KrcView.this, locatedViewHolder.krcLineInfo,
                         locatedViewHolder.getBindingAdapterPosition());
             }
@@ -552,7 +548,6 @@ public class KrcView extends FrameLayout {
             if (onDraggingListener == null || locatedViewHolder == null) {
                 return;
             }
-            setProgress(locatedViewHolder.getKrcLineInfo().startTimeMs);
             onDraggingListener.onStopDragging(KrcView.this, locatedViewHolder.krcLineInfo,
                     locatedViewHolder.getBindingAdapterPosition());
         }
@@ -583,7 +578,7 @@ public class KrcView extends FrameLayout {
         }
 
         private void notifyDragging() {
-            if (onDraggingListener == null || locatedViewHolder == null) {
+            if (onDraggingListener == null) {
                 return;
             }
             final LineHolder cur = getLocatedViewHolder();
@@ -598,12 +593,16 @@ public class KrcView extends FrameLayout {
         }
     };
 
-    private void updateLocateViewTopOffset() {
-        if (locatedView == null || locatedView.getVisibility() == View.VISIBLE) {
+    private void updateLocateViewTopOffset(final int lineIndex) {
+        if (locatedView == null) {
             return;
         }
         final ViewHolder curVH = recyclerView.findViewHolderForAdapterPosition(
-                curLineIndex == -1 ? 0 : curLineIndex);
+                lineIndex == -1 ? 0 : lineIndex);
+        updateLocateViewTopOffset(curVH);
+    }
+
+    private void updateLocateViewTopOffset(final ViewHolder curVH) {
         if (curVH == null) {
             return;
         }
